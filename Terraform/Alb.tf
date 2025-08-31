@@ -64,7 +64,7 @@ resource "helm_release" "aws_load_balancer_controller" {
   chart      = "aws-load-balancer-controller"
 
   values = [
-    templatefile("${path.root}/../k8s/alb-values.yaml", {
+    templatefile("${path.root}/alb-values.yaml", {
       vpc_id       = module.vpc.vpc_id
       cluster_name = module.eks.cluster_name
       region       = var.region
