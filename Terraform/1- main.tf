@@ -25,7 +25,13 @@ module "ebs" {
   name              = "db-volume"
 }
 
-
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority)
+    token                  = data.aws_eks_cluster_auth.this.token
+  }
+}
 module "monitoring" {
   source = "./modules/monitoring"
   # cluster_endpoint              = module.eks.cluster_endpoint
