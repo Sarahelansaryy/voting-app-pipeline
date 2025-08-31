@@ -24,8 +24,14 @@ resource "aws_iam_role" "alb_irsa" {
   assume_role_policy = data.aws_iam_policy_document.alb_assume.json
 }
 
+resource "aws_iam_policy" "alb_controller" {
+  name        = "AWSLoadBalancerControllerIAMPolicy"
+  description = "IAM policy for AWS Load Balancer Controller"
+  policy      = file("iam_policy.json")
+}
+
 resource "aws_iam_role_policy_attachment" "alb_policy_attach" {
-  policy_arn = "arn:aws:iam::aws:policy/AWSLoadBalancerControllerIAMPolicy"
+  policy_arn = aws_iam_policy.alb_controller.arn
   role       = aws_iam_role.alb_irsa.name
 }
 
@@ -41,6 +47,10 @@ resource "kubernetes_service_account" "alb_sa" {
       "eks.amazonaws.com/role-arn" = aws_iam_role.alb_irsa.arn
     }
   }
+
+  depends_on = [
+    aws_iam_role.alb_irsa # Ensure role exists before SA
+  ]
 }
 
 #####################################
@@ -65,12 +75,15 @@ resource "helm_release" "aws_load_balancer_controller" {
   set = [{
     name  = "serviceAccount.create"
     value = "false"
-    }, {
-    name = "serviceAccount.name"
-    value = kubernetes_service_account.alb_sa.metadata[0].name }
-  ]
+    },
+
+    {
+      name  = "serviceAccount.name"
+      value = kubernetes_service_account.alb_sa.metadata[0].name
+  }]
 
   depends_on = [
-    kubernetes_service_account.alb_sa
+    kubernetes_service_account.alb_sa,
+    aws_iam_role_policy_attachment.alb_policy_attach # Ensure policy is attached
   ]
 }
