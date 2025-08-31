@@ -17,7 +17,7 @@ spec:
                 name: vote
                 port:
                   number: 8080
-    - host: result.example.com
+    - host: result.result-vote-app.com
       http:
         paths:
           - path: /
